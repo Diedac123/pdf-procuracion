@@ -246,13 +246,13 @@ fn extraer_numero_cheque(texto: &str, p: usize) -> String {
 fn procesar_pdf(ruta_archivo: &PathBuf) -> Result<Vec<DatosPagina>, Box<dyn std::error::Error>> {
     let doc = Document::load(ruta_archivo)?;
     let mut lista_datos = Vec::new();
-    
+
     // Obtener todas las páginas del documento
     let pages = doc.get_pages();
     let num_pages = pages.len();
-    
+
     println!("El PDF tiene {} páginas", num_pages);
-    
+
     // Iterar sobre cada página
     for (p, (page_num, _page_id)) in pages.iter().enumerate() {
         // Extraer texto de esta página específica
@@ -263,27 +263,35 @@ fn procesar_pdf(ruta_archivo: &PathBuf) -> Result<Vec<DatosPagina>, Box<dyn std:
                 continue;
             }
         };
-        
+
         // Limpiar el texto
         let texto: String = texto_pagina
             .replace('\n', " ")
             .chars()
             .filter(|c| c.is_ascii() || c.is_alphanumeric() || c.is_whitespace())
             .collect();
-        
+
         // Saltar páginas con menos de 500 caracteres
         if texto.len() < 500 {
-            println!("Página {} omitida: solo {} caracteres", page_num, texto.len());
+            println!(
+                "Página {} omitida: solo {} caracteres",
+                page_num,
+                texto.len()
+            );
             continue;
         }
-        
-        println!("Procesando página {} ({} caracteres)", page_num, texto.len());
-        
+
+        println!(
+            "Procesando página {} ({} caracteres)",
+            page_num,
+            texto.len()
+        );
+
         let nombre = extraer_texto_entre_comillas(&texto, p);
         let (expediente, año) = extraer_expediente_y_año(&texto, p);
         let monto = extraer_monto(&texto, p);
         let cheque = extraer_numero_cheque(&texto, p);
-        
+
         lista_datos.push(DatosPagina {
             nombre,
             expediente,
@@ -292,7 +300,7 @@ fn procesar_pdf(ruta_archivo: &PathBuf) -> Result<Vec<DatosPagina>, Box<dyn std:
             cheque,
         });
     }
-    
+
     Ok(lista_datos)
 }
 
@@ -352,7 +360,7 @@ fn guardar_y_formatear_excel(
             if col_idx < 8 {
                 let row = (row_idx + 1) as u32;
                 let col = col_idx as u16;
-                
+
                 // Columna B (índice 1) es Monto - escribir como número
                 if col_idx == 1 {
                     // Convertir coma decimal a punto para parsear
@@ -397,18 +405,16 @@ fn guardar_y_formatear_excel(
         }
 
         // Crear tabla REND
-        let table_rend = Table::new()
-            .set_style(TableStyle::Light1)
-            .set_columns(&[
-                TableColumn::new().set_header("Numero de Cheque"),
-                TableColumn::new().set_header("Monto"),
-                TableColumn::new().set_header("AUTOS"),
-                TableColumn::new().set_header("Expediente"),
-                TableColumn::new().set_header("Año"),
-                TableColumn::new().set_header("Observaciones"),
-                TableColumn::new().set_header("Control"),
-                TableColumn::new().set_header("Control cheque"),
-            ]);
+        let table_rend = Table::new().set_style(TableStyle::Light1).set_columns(&[
+            TableColumn::new().set_header("Numero de Cheque"),
+            TableColumn::new().set_header("Monto"),
+            TableColumn::new().set_header("AUTOS"),
+            TableColumn::new().set_header("Expediente"),
+            TableColumn::new().set_header("Año"),
+            TableColumn::new().set_header("Observaciones"),
+            TableColumn::new().set_header("Control"),
+            TableColumn::new().set_header("Control cheque"),
+        ]);
         worksheet_rend.add_table(0, 0, max_row_rend, 7, &table_rend)?;
     }
 
@@ -464,17 +470,15 @@ fn guardar_y_formatear_excel(
     // Crear tabla PDF
     if !datos.is_empty() {
         let max_row_pdf = datos.len() as u32;
-        let table_pdf = Table::new()
-            .set_style(TableStyle::Light1)
-            .set_columns(&[
-                TableColumn::new().set_header("Nombre"),
-                TableColumn::new().set_header("Expediente"),
-                TableColumn::new().set_header("año"),
-                TableColumn::new().set_header("Monto"),
-                TableColumn::new().set_header("Cheque"),
-                TableColumn::new().set_header("Control"),
-                TableColumn::new().set_header("Control cheque"),
-            ]);
+        let table_pdf = Table::new().set_style(TableStyle::Light1).set_columns(&[
+            TableColumn::new().set_header("Nombre"),
+            TableColumn::new().set_header("Expediente"),
+            TableColumn::new().set_header("año"),
+            TableColumn::new().set_header("Monto"),
+            TableColumn::new().set_header("Cheque"),
+            TableColumn::new().set_header("Control"),
+            TableColumn::new().set_header("Control cheque"),
+        ]);
         worksheet_pdf.add_table(0, 0, max_row_pdf, 6, &table_pdf)?;
     }
 
